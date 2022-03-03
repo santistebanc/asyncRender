@@ -1,0 +1,22 @@
+{
+  "name": "async-state",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node esbuild.config.js -w && reload",
+    "build": "node esbuild.config.js",
+    "lint": "eslint --fix . && echo 'Lint complete.'"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.12.17",
+    "esbuild-serve": "^1.0.1",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.2"
+  }
+}
