@@ -13,7 +13,7 @@ export function isPromise(obj) {
 }
 
 export function isAsyncIterable(obj) {
-  return !!obj[Symbol.asyncIterator]
+  return !!obj?.[Symbol.asyncIterator]
 }
 
 export async function* asAsyncIter(val) {
