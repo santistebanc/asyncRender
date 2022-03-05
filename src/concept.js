@@ -1,6 +1,7 @@
-import { isFunction, isObject } from './utils'
+import { isFunction, isObject, isSymbol } from './utils'
 
 const make = del => {
+  const id = Symbol('ctx')
   const memo = {}
   let value
   const propagate = () => {
@@ -11,6 +12,7 @@ const make = del => {
     (...args) => (isFunction(value) ? value(...args) : value),
     {
       get(_, k) {
+        if (k === Symbol.toPrimitive) return () => id
         if (k === 'memo') return memo
         if (k === 'value') return value
         if (!(k in memo)) {
@@ -27,15 +29,37 @@ const make = del => {
           memo[k] = make(propagate)
         }
         if (isObject(v)) {
-          Object.keys(v).forEach(it => {
+          Reflect.ownKeys(v).forEach(it => {
             memo[k][it] = v[it]
           })
         } else {
-          Object.keys(memo[k].memo).forEach(it => {
+          Reflect.ownKeys(memo[k].memo).forEach(it => {
             delete memo[k].memo[it]
             memo[k].value = undefined
           })
-          memo[k].value = isFunction(v) ? v : () => v
+          if (isSymbol(k, 'ctx')) {
+            Object.keys(memo).forEach(m => {
+              if (!(k in memo[m].memo)) {
+                memo[m].memo[k] = make()
+                memo[m].memo[k].value = v
+              }
+              console.log('m', m, memo[m].memo)
+            })
+          }
+          memo[k].value = isFunction(v)
+            ? (...args) => {
+                console.log('......Object.keys(memo)', memo)
+                // const prev = $
+                // $ = make()
+                // Reflect.ownKeys(memo).forEach(k => {
+                //   if (isSymbol(k, 'ctx')) $[k] = memo[k]
+                // })
+                const res = v(...args)
+                // $ = prev
+                return res
+              }
+            : () => v
+          console.log('mmmm', memo)
           propagate()
         }
         return true
@@ -45,17 +69,13 @@ const make = del => {
   return proxy
 }
 
-const $ = make()
+let $ = make()
 
-// $.one.two.three = 3
+$.one.two = 2
+$.one[$.val] = 'vvv'
 
-$.one = { two: { three: { four: () => 4 } } }
+console.log($.one.two[$.val]())
 
-// $.one.two.three = 3
-// $.one = 1
-// $.one.two.three.aka = 2
-
-console.log($.one.two())
 // console.log($.one.two())
 
 // const sum = () => $.one() + $.two()

@@ -16,6 +16,10 @@ export function isAsyncIterable(obj) {
   return !!obj?.[Symbol.asyncIterator]
 }
 
+export function isSymbol(obj, desc) {
+  return typeof obj === 'symbol' && (!desc || obj.description === desc)
+}
+
 export async function* asAsyncIter(val) {
   return val
 }
