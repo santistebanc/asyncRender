@@ -1,49 +1,49 @@
-import { Hub } from './Hub'
+import { Hub } from "./Hub";
 
 export function isFunction(obj) {
-  return typeof obj === 'function'
+  return typeof obj === "function";
 }
 
 export function isObject(obj) {
-  return typeof obj === 'object' && obj !== null
+  return typeof obj === "object" && obj !== null;
 }
 
 export function isPromise(obj) {
-  return obj && Object.prototype.toString.call(obj) === '[object Promise]'
+  return obj && Object.prototype.toString.call(obj) === "[object Promise]";
 }
 
 export function isAsyncIterable(obj) {
-  return !!obj?.[Symbol.asyncIterator]
+  return !!obj?.[Symbol.asyncIterator];
 }
 
 export function isSymbol(obj, desc) {
-  return typeof obj === 'symbol' && (!desc || obj.description === desc)
+  return typeof obj === "symbol" && (!desc || obj.description === desc);
 }
 
 export async function* asAsyncIter(val) {
-  return val
+  return val;
 }
 
 export const run = (obj, func) => {
-  const hub = Hub()
-  ;(async () => {
-    let index = 0
-    const iter = obj[Symbol.asyncIterator]()
+  const hub = Hub();
+  (async () => {
+    let index = 0;
+    const iter = obj[Symbol.asyncIterator]();
     while (!hub.done) {
-      const { done, value } = await iter.next()
+      const { done, value } = await iter.next();
       const res = func
         ? func(value, { index: index++, done: done || hub.done, iter, hub })
-        : value
-      if (done) hub.resolve(res)
-      hub.push(res, done)
+        : value;
+      if (done) hub.resolve(res);
+      hub.push(res, done);
     }
-  })()
-  return hub
-}
+  })();
+  return hub;
+};
 
 export const map = async function* (iter, func) {
-  let index = 0
+  let index = 0;
   for await (const value of iter) {
-    yield func(value, { index: index++, iter })
+    yield func(value, { index: index++, iter });
   }
-}
+};
