@@ -10,7 +10,8 @@ const app = $({
         }
       : {
           title: "about",
+          content: () => "the page is: " + $.page(),
         },
 });
 
-app.content.title.$watch();
+$(app.content.title).map((val) => console.log(val));
