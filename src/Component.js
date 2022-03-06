@@ -2,58 +2,46 @@ import { withContext } from "./Context";
 import { isFunction, isObject, isSymbol } from "./utils";
 
 const make = (del) => {
-  const memo = {};
-  let value;
+  const get = (...args) =>
+    isFunction(get.value) ? withContext(get.value, get)(...args) : get.value;
+  get.value = undefined;
+
   const propagate = () => {
     del?.();
-    value = { ...memo };
+    get.value = undefined;
   };
-  const proxy = new Proxy(
-    (...args) => (isFunction(value) ? value(...args) : value),
-    {
-      get(_, k) {
-        if (k === Symbol.toPrimitive) return () => value;
-        if (k === "memo") return memo;
-        if (k === "value") return value;
-        if (!(k in memo)) {
-          memo[k] = make(propagate);
-        }
-        return memo[k];
-      },
-      set(_, k, v) {
-        if (k === "value") {
-          value = v;
-          return true;
-        }
-        if (!(k in memo)) {
-          memo[k] = make(propagate);
-        }
-        if (isObject(v)) {
-          Reflect.ownKeys(v).forEach((it) => {
-            memo[k][it] = v[it];
-          });
-        } else {
-          Reflect.ownKeys(memo[k].memo).forEach((it) => {
-            delete memo[k].memo[it];
-            memo[k].value = undefined;
-          });
-          if (isSymbol(k, "ctx")) {
-            Object.keys(memo).forEach((m) => {
-              if (!(k in memo[m].memo)) {
-                memo[m].memo[k] = make();
-                memo[m].memo[k].value = v;
-              }
-            });
-          }
-          console.log(".....memo", memo);
-          memo[k].value = isFunction(v) ? withContext(v, memo) : () => v;
-          propagate();
-        }
+
+  return new Proxy(get, {
+    get(memo, k) {
+      if (k === Symbol.toPrimitive) return () => memo.value;
+      if (!(k in memo)) memo[k] = make(propagate);
+      return memo[k];
+    },
+    set(memo, k, v) {
+      if (k === "value") {
+        memo.value = v;
         return true;
-      },
-    }
-  );
-  return proxy;
+      }
+      memo[k] = make(propagate);
+      if (isObject(v)) {
+        Reflect.ownKeys(v).forEach((it) => {
+          memo[k][it] = v[it];
+        });
+      } else {
+        //TODO: find more performant solution for inheriting ctx
+        if (isSymbol(k, "ctx")) {
+          Object.keys(memo).forEach((m) => {
+            if (!(k in memo[m].memo)) {
+              memo[m][k] = v;
+            }
+          });
+        }
+        memo[k].value = v;
+        propagate();
+      }
+      return true;
+    },
+  });
 };
 
 const Component = (initial) => {
